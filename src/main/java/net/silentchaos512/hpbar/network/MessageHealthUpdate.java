@@ -1,13 +1,14 @@
 package net.silentchaos512.hpbar.network;
 
-import io.netty.buffer.ByteBuf;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
+import net.minecraft.network.PacketBuffer;
+import net.minecraftforge.fml.network.NetworkDirection;
+import net.minecraftforge.fml.network.NetworkEvent;
 import net.silentchaos512.hpbar.HealthBar;
 
-public class MessageHealthUpdate implements IMessage {
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
+
+public class MessageHealthUpdate {
 
   private float currentHealth;
   private float maxHealth;
@@ -22,28 +23,29 @@ public class MessageHealthUpdate implements IMessage {
     this.maxHealth = max;
   }
 
-  @Override
-  public void fromBytes(ByteBuf buf) {
+  public static MessageHealthUpdate fromBytes(PacketBuffer buf) {
 
-    this.currentHealth = buf.readFloat();
-    this.maxHealth = buf.readFloat();
+    MessageHealthUpdate msg = new MessageHealthUpdate();
+    msg.currentHealth = buf.readFloat();
+    msg.maxHealth = buf.readFloat();
+
+    return msg;
   }
 
-  @Override
-  public void toBytes(ByteBuf buf) {
+  public static void toBytes(MessageHealthUpdate msg, PacketBuffer buf) {
 
-    buf.writeFloat(currentHealth);
-    buf.writeFloat(maxHealth);
+    buf.writeFloat(msg.currentHealth);
+    buf.writeFloat(msg.maxHealth);
   }
 
-  public static class Handler implements IMessageHandler<MessageHealthUpdate, IMessage> {
+  public static class Handler implements BiConsumer<MessageHealthUpdate, Supplier<NetworkEvent.Context>> {
 
     @Override
-    public IMessage onMessage(MessageHealthUpdate message, MessageContext ctx) {
+    public void accept(MessageHealthUpdate message, Supplier<NetworkEvent.Context> ctx) {
 
-      if (ctx.side == Side.CLIENT)
+      if (ctx.get().getDirection() == NetworkDirection.PLAY_TO_CLIENT)
         HealthBar.instance.handleUpdatePacket(message.currentHealth, message.maxHealth);
-      return null;
+      ctx.get().setPacketHandled(true);
     }
   }
 }

@@ -1,0 +1,13 @@
+modLoader="javafml"
+loaderVersion="[34,)"
+license="GPL-3.0"
+issueTrackerURL="https://github.com/Virizion/HealthBar/issues"
+
+[[mods]]
+modId="healthbar"
+version="${version}"
+displayName="Health Bar"
+displayURL="https://github.com/Virizion/HealthBar"
+credits="SilentChaos512"
+authors="SilentChaos512, Virizion"
+description="A simple, accurate health bar!"
