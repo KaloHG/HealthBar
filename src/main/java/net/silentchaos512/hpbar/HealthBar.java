@@ -1,28 +1,28 @@
 package net.silentchaos512.hpbar;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.ai.attributes.Attributes;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.ConfigGuiHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.EntityEvent.EntityConstructing;
+import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.ExtensionPoint;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.network.NetworkDirection;
-import net.minecraftforge.fml.network.NetworkRegistry;
-import net.minecraftforge.fml.network.PacketDistributor;
-import net.minecraftforge.fml.network.simple.SimpleChannel;
+import net.minecraftforge.network.NetworkDirection;
+import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.network.simple.SimpleChannel;
 import net.silentchaos512.hpbar.config.Config;
 import net.silentchaos512.hpbar.gui.GuiConfigHealthBar;
 import net.silentchaos512.hpbar.gui.GuiHealthBar;
@@ -62,7 +62,7 @@ public class HealthBar {
 
     Config.init();
     ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.getConfiguration());
-    ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.CONFIGGUIFACTORY, () -> (mc, screen) -> new GuiConfigHealthBar(screen));
+    ModLoadingContext.get().registerExtensionPoint(ConfigGuiHandler.ConfigGuiFactory.class, () -> new ConfigGuiHandler.ConfigGuiFactory((mc, screen) -> new GuiConfigHealthBar(screen)));
 
     IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
     bus.addListener(this::preInit);
@@ -83,10 +83,10 @@ public class HealthBar {
   }
 
   @SubscribeEvent
-  public void onEntityConstructing(EntityConstructing event) {
+  public void onEntityConstructing(EntityJoinWorldEvent event) {
 
-    if (event.getEntity() instanceof ServerPlayerEntity) {
-      ServerPlayerEntity player = (ServerPlayerEntity) event.getEntity();
+    if (event.getEntity() instanceof ServerPlayer) {
+      ServerPlayer player = (ServerPlayer) event.getEntity();
       if (player.getAttribute(Attributes.MAX_HEALTH) != null) {
         float current = player.getHealth();
         float max = player.getMaxHealth();
@@ -99,20 +99,20 @@ public class HealthBar {
   public void onPlayerTick(TickEvent.PlayerTickEvent event) {
 
     // Send a health update packet to the player if necessary.
-    if (event.player instanceof ServerPlayerEntity) {
+    if (event.player instanceof ServerPlayer) {
       float current = event.player.getHealth();
       float max = event.player.getMaxHealth();
 
       boolean healthChanged = current != playerPrevCurrentHealth || max != playerPrevMaxHealth;
       boolean checkInTime = Config.checkinFrequency.get() <= 0 ? false
-          : event.player.world.getGameTime() % Config.checkinFrequency.get() == 0;
+          : event.player.level.getGameTime() % Config.checkinFrequency.get() == 0;
       if (healthChanged || checkInTime) {
         // Calculate health change, save the number if damage was taken.
         float diff = current - playerPrevCurrentHealth;
         if (diff < 0)
           playerLastDamageTaken = -diff;
 
-        network.send(PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity) event.player), new MessageHealthUpdate(current, max));
+        network.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) event.player), new MessageHealthUpdate(current, max));
       }
     }
   }
@@ -120,7 +120,7 @@ public class HealthBar {
   public float getPlayerHealth() {
 
     if (System.currentTimeMillis() - lastUpdatePacketTime > CLIENT_MODE_DELAY) {
-      PlayerEntity clientPlayer = proxy.getClientPlayer();
+      Player clientPlayer = proxy.getClientPlayer();
       if (clientPlayer != null)
         return clientPlayer.getHealth();
     }
@@ -131,7 +131,7 @@ public class HealthBar {
   public float getPlayerMaxHealth() {
 
     if (System.currentTimeMillis() - lastUpdatePacketTime > CLIENT_MODE_DELAY) {
-      PlayerEntity clientPlayer = proxy.getClientPlayer();
+      Player clientPlayer = proxy.getClientPlayer();
       if (clientPlayer != null)
         return clientPlayer.getMaxHealth();
     }

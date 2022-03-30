@@ -1,8 +1,8 @@
 package net.silentchaos512.hpbar.network;
 
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkDirection;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.network.NetworkDirection;
+import net.minecraftforge.network.NetworkEvent;
 import net.silentchaos512.hpbar.HealthBar;
 
 import java.util.function.BiConsumer;
@@ -23,7 +23,7 @@ public class MessageHealthUpdate {
     this.maxHealth = max;
   }
 
-  public static MessageHealthUpdate fromBytes(PacketBuffer buf) {
+  public static MessageHealthUpdate fromBytes(FriendlyByteBuf buf) {
 
     MessageHealthUpdate msg = new MessageHealthUpdate();
     msg.currentHealth = buf.readFloat();
@@ -32,7 +32,7 @@ public class MessageHealthUpdate {
     return msg;
   }
 
-  public static void toBytes(MessageHealthUpdate msg, PacketBuffer buf) {
+  public static void toBytes(MessageHealthUpdate msg, FriendlyByteBuf buf) {
 
     buf.writeFloat(msg.currentHealth);
     buf.writeFloat(msg.maxHealth);

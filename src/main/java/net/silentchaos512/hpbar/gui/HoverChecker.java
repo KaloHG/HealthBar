@@ -19,7 +19,7 @@
 
 package net.silentchaos512.hpbar.gui;
 
-import net.minecraft.client.gui.widget.Widget;
+import net.minecraft.client.gui.components.AbstractWidget;
 
 /**
  * This class implements an easy way to check if the mouse has hovered within a
@@ -31,7 +31,7 @@ import net.minecraft.client.gui.widget.Widget;
 public class HoverChecker
 {
     private int top, bottom, left, right, threshold;
-    private Widget widget;
+    private AbstractWidget widget;
     private long hoverStart;
 
     public HoverChecker(int top, int bottom, int left, int right, int threshold)
@@ -44,7 +44,7 @@ public class HoverChecker
         this.hoverStart = -1;
     }
 
-    public HoverChecker(Widget widget, int threshold)
+    public HoverChecker(AbstractWidget widget, int threshold)
     {
         this.widget = widget;
         this.threshold = threshold;
@@ -83,7 +83,7 @@ public class HoverChecker
         if (this.widget != null)
         {
             this.top = widget.y;
-            this.bottom = widget.y + widget.getHeightRealms();
+            this.bottom = widget.y + widget.getHeight();
             this.left = widget.x;
             this.right = widget.x + widget.getWidth();
             canHover = canHover && widget.visible;

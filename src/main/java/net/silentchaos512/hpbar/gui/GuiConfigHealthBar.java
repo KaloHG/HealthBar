@@ -1,9 +1,9 @@
 package net.silentchaos512.hpbar.gui;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.text.StringTextComponent;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.TextComponent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +15,7 @@ public class GuiConfigHealthBar extends Screen {
     private List<String> currentPath = new ArrayList<>();
 
     public GuiConfigHealthBar(Screen parentScreen) {
-        super(new StringTextComponent("Health Bar Config"));
+        super(new TextComponent("Health Bar Config"));
 
         this.parentScreen = parentScreen;
     }
@@ -23,17 +23,17 @@ public class GuiConfigHealthBar extends Screen {
     @Override
     protected void init() {
         this.list = new GuiListHealthBarConfig(this);
-        this.children.add(this.list);
+        addWidget(this.list);
 
-        this.backButton = new Button(this.width / 2 - 154, this.height - 30, 150, 20, new StringTextComponent("Back"), button -> closeScreen());
-        addButton(this.backButton);
+        this.backButton = new Button(this.width / 2 - 154, this.height - 30, 150, 20, new TextComponent("Back"), button -> onClose());
+        addRenderableWidget(this.backButton);
     }
 
     @Override
-    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         renderBackground(matrixStack);
         this.list.render(matrixStack, mouseX, mouseY, partialTicks);
-        drawCenteredString(matrixStack, this.font, !this.currentPath.isEmpty() ? new StringTextComponent(this.currentPath.get(this.currentPath.size() - 1)) : this.title, this.width / 2, 8, 16777215);
+        drawCenteredString(matrixStack, this.font, !this.currentPath.isEmpty() ? new TextComponent(this.currentPath.get(this.currentPath.size() - 1)) : this.title, this.width / 2, 8, 16777215);
         super.render(matrixStack, mouseX, mouseY, partialTicks);
         this.list.drawTooltips(matrixStack, mouseX, mouseY);
     }
@@ -43,7 +43,7 @@ public class GuiConfigHealthBar extends Screen {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         boolean success = super.mouseClicked(mouseX, mouseY, button);
 
-        for (GuiListHealthBarConfig.Entry e : list.getEventListeners()) {
+        for (GuiListHealthBarConfig.Entry e : list.children()) {
             if (!e.isMouseOver(mouseX, mouseY)) {
                 e.mouseClicked(mouseX, mouseY, button);
             }
@@ -59,11 +59,11 @@ public class GuiConfigHealthBar extends Screen {
     }
 
     @Override
-    public void closeScreen() {
+    public void onClose() {
         if (!this.currentPath.isEmpty()) {
             backwardPath();
         } else {
-            this.minecraft.displayGuiScreen(this.parentScreen);
+            this.minecraft.setScreen(this.parentScreen);
         }
     }
 
