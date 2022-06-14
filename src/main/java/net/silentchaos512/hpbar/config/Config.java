@@ -21,7 +21,6 @@ public class Config {
   public static ForgeConfigSpec.DoubleValue barQuiverFraction;
   public static ForgeConfigSpec.DoubleValue barQuiverIntensity;
   public static ForgeConfigSpec.EnumValue<Justification> barJustification;
-  public static ForgeConfigSpec.IntValue checkinFrequency;
   public static Color colorHealthBar = new Color(1f, 0f, 0f);
 
   private static ForgeConfigSpec c;
@@ -115,15 +114,6 @@ public class Config {
     barQuiverIntensity = builder.comment("How much the bar shakes when low on health. Intensity also increases with lower health.").defineInRange(
         "QuiverIntensity",
         1.0f, 0f, Float.MAX_VALUE);
-
-    builder.pop(2).push(CAT_NETWORK);
-
-    checkinFrequency = builder.comment("Even if the player's health has not changed, an update packet will be sent"
-            + " after this many ticks. Set to 0 to disable (not recommended, unless you're very"
-            + " bandwidth conscious).").defineInRange(
-        "CheckInFrequency",
-        300, 0, Integer.MAX_VALUE);
-
   //@formatter:off
   }
 
