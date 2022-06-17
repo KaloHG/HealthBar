@@ -1,9 +1,11 @@
 package net.silentchaos512.hpbar.gui;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.TextComponent;
+import net.silentchaos512.hpbar.config.Config;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +65,7 @@ public class GuiConfigHealthBar extends Screen {
         if (!this.currentPath.isEmpty()) {
             backwardPath();
         } else {
+            Config.save();
             this.minecraft.setScreen(this.parentScreen);
         }
     }
@@ -83,5 +86,10 @@ public class GuiConfigHealthBar extends Screen {
 
     public List<String> getCurrentPath() {
         return this.currentPath;
+    }
+
+    public Minecraft getMinecraft()
+    {
+        return minecraft;
     }
 }

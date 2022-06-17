@@ -16,13 +16,8 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextComponent;
-import net.minecraftforge.client.gui.GuiUtils;
-import net.minecraftforge.client.gui.widget.ExtendedButton;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import net.silentchaos512.hpbar.config.Config;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -54,70 +49,51 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
             }
         });
 
-        Map<String, Object> spec = getAtPath(Config.getConfiguration().getValues().valueMap(), gui.getCurrentPath());
-        Map<String, Object> valueSpec = Config.getConfiguration().valueMap();
+        Map<String, Config.ConfigSpecObject> spec = getAtPath(Config.rootSection.getSpec(), this.gui.getCurrentPath());
 
         spec.forEach((k, v) ->
         {
-            ForgeConfigSpec.ValueSpec vs = v instanceof ForgeConfigSpec.ConfigValue ? getValueSpec(valueSpec, gui.getCurrentPath(), k) : null;
-
-            if (v instanceof ForgeConfigSpec.BooleanValue) {
-                entries.add(new BooleanEntry(k, (ForgeConfigSpec.BooleanValue) v, vs));
-            } else if (v instanceof ForgeConfigSpec.IntValue) {
-                entries.add(new IntEntry(k, (ForgeConfigSpec.IntValue) v, vs));
-            } else if (v instanceof ForgeConfigSpec.DoubleValue) {
-                entries.add(new DoubleEntry(k, (ForgeConfigSpec.DoubleValue) v, vs));
-            } else if (v instanceof ForgeConfigSpec.EnumValue) {
-                entries.add(new EnumEntry<>(k, (ForgeConfigSpec.EnumValue<?>) v, vs));
-            } else if (vs != null && vs.getDefault() instanceof String) {
-                entries.add(new StringEntry(k, (ForgeConfigSpec.ConfigValue<String>) v, vs));
-            } else if (v instanceof com.electronwill.nightconfig.core.Config || v instanceof Map) {
+            if (v instanceof Config.BooleanValue) {
+                entries.add(new BooleanEntry(k, (Config.BooleanValue) v));
+            } else if (v instanceof Config.RangeIntValue) {
+                entries.add(new IntEntry(k, (Config.RangeIntValue) v));
+            } else if (v instanceof Config.RangeDoubleValue) {
+                entries.add(new DoubleEntry(k, (Config.RangeDoubleValue) v));
+            } else if (v instanceof Config.EnumValue) {
+                entries.add(new EnumEntry<>(k, (Config.EnumValue<?>) v));
+            } else if (v instanceof Config.StringValue) {
+                entries.add(new StringEntry(k, (Config.StringValue) v));
+            } else if (v instanceof Config.ConfigSection) {
                 entries.add(new GroupEntry(k));
             }
         });
+
 
         setSelected(null);
         setScrollAmount(0);
         replaceEntries(entries);
     }
 
-    private Map<String, Object> getAtPath(Map<String, Object> spec, List<String> path) {
-        path = new ArrayList<>(path);
-        path.add(0, Config.CAT_BAR);
-
-        if (path.isEmpty()) {
+    private Map<String, Config.ConfigSpecObject> getAtPath(Map<String, Config.ConfigSpecObject> spec, List<String> path)
+    {
+        if (path.isEmpty())
+        {
             return spec;
         }
 
-        Map<String, Object> last = convertToMap(spec.get(path.get(0)));
+        Map<String, Config.ConfigSpecObject> last = convertToMap(spec.get(path.get(0)));
 
-        for (int i = 1; i < path.size(); i++) {
+        for (int i = 1; i < path.size(); i++)
+        {
             last = convertToMap(last.get(path.get(i)));
         }
 
         return last;
     }
 
-    private ForgeConfigSpec.ValueSpec getValueSpec(Map<String, Object> spec, List<String> path, String key) {
-        path = new ArrayList<>(path);
-        path.add(0, Config.CAT_BAR);
-
-        Map<String, Object> last = convertToMap(spec.get(path.get(0)));
-
-        for (int i = 1; i < path.size(); i++) {
-            last = convertToMap(last.get(path.get(i)));
-        }
-
-        return (ForgeConfigSpec.ValueSpec) last.get(key);
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> convertToMap(Object object) {
-        if (object instanceof com.electronwill.nightconfig.core.Config) {
-            return ((com.electronwill.nightconfig.core.Config) object).valueMap();
-        }
-
-        return (Map<String, Object>) object;
+    private Map<String, Config.ConfigSpecObject> convertToMap(Object object)
+    {
+        return ((Config.ConfigSection) object).getSpec();
     }
 
     @Override
@@ -146,25 +122,23 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         protected abstract void drawTooltip(PoseStack matrixStack, int mouseX, int mouseY);
     }
 
-    public abstract class ConfigEntry<T, V extends ForgeConfigSpec.ConfigValue<T>> extends Entry {
+    public abstract class ConfigEntry<T, V extends Config.ConfigValue<T>> extends Entry {
         protected V value;
-        protected ForgeConfigSpec.ValueSpec spec;
         protected HoverChecker hoverChecker;
 
-        protected ConfigEntry(String name, V value, ForgeConfigSpec.ValueSpec spec) {
+        protected ConfigEntry(String name, V value) {
             super(name);
 
             this.value = value;
-            this.spec = spec;
         }
 
         @Override
         protected void drawTooltip(PoseStack matrixStack, int mouseX, int mouseY) {
             if (this.hoverChecker != null && this.hoverChecker.checkHover(mouseX, mouseY)) {
                 drawHoveringText(matrixStack, Arrays.asList(
-                        new TextComponent(this.name).setStyle(Style.EMPTY.applyFormat(ChatFormatting.GREEN)),
-                        new TextComponent(this.spec.getComment().substring(0, this.spec.getComment().length() - (this.spec.getRange() != null ? ("Range: " + this.spec.getRange()).length() + 1 : 0))).setStyle(Style.EMPTY.applyFormat(ChatFormatting.YELLOW)),
-                        new TextComponent("[" + (this.spec.getRange() != null ? "range: " + this.spec.getRange() + ", " : "") + "default: " + this.spec.getDefault() + "]").setStyle(Style.EMPTY.applyFormat(ChatFormatting.AQUA))),
+                                new TextComponent(this.name).setStyle(Style.EMPTY.withColor(ChatFormatting.GREEN)),
+                                new TextComponent(this.value.getDescription()).setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW)),
+                                new TextComponent("[default: " + this.value.getDefaultValue() + "]").setStyle(Style.EMPTY.withColor(ChatFormatting.AQUA))),
                         mouseX, mouseY);
             }
         }
@@ -266,46 +240,19 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
             }
         }
 
-        //Why the hell is Range a private class Forge?
-        @SuppressWarnings("unchecked")
-        protected T getRangeMin() {
-            try {
-                return (T) ObfuscationReflectionHelper.findMethod(getRangeClass(), "getMin").invoke(this.spec.getRange());
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to get range min?", e);
-            }
-        }
-
-        @SuppressWarnings("unchecked")
-        protected T getRangeMax() {
-            try {
-                return (T) ObfuscationReflectionHelper.findMethod(getRangeClass(), "getMax").invoke(this.spec.getRange());
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to get range max?", e);
-            }
-        }
-
-        private Class<?> getRangeClass() {
-            try {
-                return Class.forName(ForgeConfigSpec.class.getName() + "$Range");
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException("Can't find Range class?", e);
-            }
-        }
-
         @Override
         public Component getNarration() {
             return TextComponent.EMPTY;
         }
     }
 
-    public class BooleanEntry extends ConfigEntry<Boolean, ForgeConfigSpec.BooleanValue> {
-        private ExtendedButton button;
+    public class BooleanEntry extends ConfigEntry<Boolean, Config.BooleanValue> {
+        private ColorableButton button;
 
-        public BooleanEntry(String name, ForgeConfigSpec.BooleanValue value, ForgeConfigSpec.ValueSpec spec) {
-            super(name, value, spec);
+        public BooleanEntry(String name, Config.BooleanValue value) {
+            super(name, value);
 
-            this.button = new ExtendedButton(0, 0, 150, 18, new TextComponent(""), b -> this.value.set(!this.value.get()));
+            this.button = new ColorableButton(0, 0, 150, 18, new TextComponent(""), b -> this.value.set(!this.value.get()));
         }
 
         @Override
@@ -315,7 +262,7 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
             this.button.x = x + listWidth / 2 + 30;
             this.button.y = y;
             this.button.setMessage(new TextComponent(this.value.get().toString()));
-            this.button.setFGColor(this.value.get() ? GuiUtils.getColorCode('2', true) : GuiUtils.getColorCode('4', true));
+            this.button.setFGColor(this.value.get() ? ChatFormatting.DARK_GREEN.getColor() : ChatFormatting.DARK_RED.getColor());
             this.button.render(matrixStack, mouseX, mouseY, partialTicks);
 
             super.render(matrixStack, slotIndex, y, x, listWidth, slotHeight, mouseX, mouseY, isSelected, partialTicks);
@@ -327,11 +274,11 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         }
     }
 
-    public class IntEntry extends ConfigEntry<Integer, ForgeConfigSpec.IntValue> {
+    public class IntEntry extends ConfigEntry<Integer, Config.RangeIntValue> {
         private EditBox button;
 
-        protected IntEntry(String name, ForgeConfigSpec.IntValue value, ForgeConfigSpec.ValueSpec spec) {
-            super(name, value, spec);
+        protected IntEntry(String name, Config.RangeIntValue value) {
+            super(name, value);
 
             this.button = new EditBox(minecraft.font, 0, 0, 150, 18, new TextComponent(""));
             this.button.setValue(value.get().toString());
@@ -339,7 +286,7 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
                 try {
                     int val = Integer.parseInt(text);
 
-                    if (spec.test(val)) {
+                    if (value.test(val)) {
                         value.set(val);
                     }
                 } catch (NumberFormatException ignored) {}
@@ -356,7 +303,7 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
             try {
                 int val = Integer.parseInt(this.button.getValue());
 
-                if (!spec.test(val)) {
+                if (!value.test(val)) {
                     this.button.setTextColor(ChatFormatting.RED.getColor());
                 } else {
                     this.button.setTextColor(14737632);
@@ -400,13 +347,35 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         public boolean charTyped(char codePoint, int modifiers) {
             return this.button.charTyped(codePoint, modifiers);
         }
+
+        @Override
+        protected void drawTooltip(PoseStack matrixStack, int mouseX, int mouseY) {
+            if (this.hoverChecker != null && this.hoverChecker.checkHover(mouseX, mouseY)) {
+                drawHoveringText(matrixStack, Arrays.asList(
+                                new TextComponent(this.name).setStyle(Style.EMPTY.withColor(ChatFormatting.GREEN)),
+                                new TextComponent(this.value.getDescription()).setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW)),
+                                new TextComponent("[range: " + rangeToString(this.value.getMin(), this.value.getMax()) + ", default: " + this.value.getDefaultValue() + "]").setStyle(Style.EMPTY.withColor(ChatFormatting.AQUA))),
+                        mouseX, mouseY);
+            }
+        }
+
+        private String rangeToString(int min, int max) {
+            if (max == Integer.MAX_VALUE) {
+                return "> " + min;
+            }
+            else if (min == Integer.MIN_VALUE) {
+                return "< " + max;
+            }
+
+            return min + " ~ " + max;
+        }
     }
 
-    public class DoubleEntry extends ConfigEntry<Double, ForgeConfigSpec.DoubleValue> {
+    public class DoubleEntry extends ConfigEntry<Double, Config.RangeDoubleValue> {
         private EditBox button;
 
-        protected DoubleEntry(String name, ForgeConfigSpec.DoubleValue value, ForgeConfigSpec.ValueSpec spec) {
-            super(name, value, spec);
+        protected DoubleEntry(String name, Config.RangeDoubleValue value) {
+            super(name, value);
 
             this.button = new EditBox(minecraft.font, 0, 0, 150, 18, new TextComponent(""));
             this.button.setValue(value.get().toString());
@@ -414,7 +383,7 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
                 try {
                     double val = Double.parseDouble(text);
 
-                    if (spec.test(val)) {
+                    if (value.test(val)) {
                         value.set(val);
                     }
                 } catch (NumberFormatException ignored) {}
@@ -431,7 +400,7 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
             try {
                 double val = Double.parseDouble(this.button.getValue());
 
-                if (!spec.test(val)) {
+                if (!value.test(val)) {
                     this.button.setTextColor(ChatFormatting.RED.getColor());
                 } else {
                     this.button.setTextColor(14737632);
@@ -475,18 +444,40 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         public boolean charTyped(char codePoint, int modifiers) {
             return this.button.charTyped(codePoint, modifiers);
         }
+
+        @Override
+        protected void drawTooltip(PoseStack matrixStack, int mouseX, int mouseY) {
+            if (this.hoverChecker != null && this.hoverChecker.checkHover(mouseX, mouseY)) {
+                drawHoveringText(matrixStack, Arrays.asList(
+                                new TextComponent(this.name).setStyle(Style.EMPTY.withColor(ChatFormatting.GREEN)),
+                                new TextComponent(this.value.getDescription()).setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW)),
+                                new TextComponent("[range: " + rangeToString(this.value.getMin(), this.value.getMax()) + ", default: " + this.value.getDefaultValue() + "]").setStyle(Style.EMPTY.withColor(ChatFormatting.AQUA))),
+                        mouseX, mouseY);
+            }
+        }
+
+        private String rangeToString(double min, double max) {
+            if (max >= Double.MAX_VALUE) {
+                return "> " + min;
+            }
+            else if (min <= -Double.MAX_VALUE) {
+                return "< " + max;
+            }
+
+            return min + " ~ " + max;
+        }
     }
 
-    public class StringEntry extends ConfigEntry<String, ForgeConfigSpec.ConfigValue<String>> {
+    public class StringEntry extends ConfigEntry<String, Config.StringValue> {
         private EditBox button;
 
-        protected StringEntry(String name, ForgeConfigSpec.ConfigValue<String> value, ForgeConfigSpec.ValueSpec spec) {
-            super(name, value, spec);
+        protected StringEntry(String name, Config.StringValue value) {
+            super(name, value);
 
             this.button = new EditBox(minecraft.font, 0, 0, 150, 18, new TextComponent(""));
             this.button.setValue(value.get());
             this.button.setResponder(text -> {
-                if (spec.test(text)) {
+                if (value.test(text)) {
                     value.set(text);
                 }
             });
@@ -499,7 +490,7 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
             this.button.x = x + listWidth / 2 + 30;
             this.button.y = y;
 
-            if (!spec.test(this.button.getValue())) {
+            if (!value.test(this.button.getValue())) {
                 this.button.setTextColor(ChatFormatting.RED.getColor());
             } else {
                 this.button.setTextColor(14737632);
@@ -541,16 +532,16 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         }
     }
 
-    public class EnumEntry<E extends Enum<E>> extends ConfigEntry<E, ForgeConfigSpec.EnumValue<E>> {
-        private ExtendedButton button;
+    public class EnumEntry<E extends Enum<E>> extends ConfigEntry<E, Config.EnumValue<E>> {
+        private ColorableButton button;
         private E[] values;
 
         @SuppressWarnings("unchecked")
-        public EnumEntry(String name, ForgeConfigSpec.EnumValue<E> value, ForgeConfigSpec.ValueSpec spec) {
-            super(name, value, spec);
+        public EnumEntry(String name, Config.EnumValue<E> value) {
+            super(name, value);
 
-            this.button = new ExtendedButton(0, 0, 150, 18, new TextComponent(""), b -> this.value.set(values[(this.value.get().ordinal() + 1) % values.length]));
-            this.values = (E[]) spec.getClazz().getEnumConstants();
+            this.button = new ColorableButton(0, 0, 150, 18, new TextComponent(""), b -> this.value.set(values[(this.value.get().ordinal() + 1) % values.length]));
+            this.values = value.getClazz().getEnumConstants();
         }
 
         @Override
@@ -572,12 +563,12 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
     }
 
     public class GroupEntry extends Entry {
-        private ExtendedButton button;
+        private ColorableButton button;
 
         public GroupEntry(String name) {
             super(name);
 
-            this.button = new ExtendedButton(0, 0, 300, 18, new TextComponent(name), b -> {
+            this.button = new ColorableButton(0, 0, 300, 18, new TextComponent(name), b -> {
             });
         }
 

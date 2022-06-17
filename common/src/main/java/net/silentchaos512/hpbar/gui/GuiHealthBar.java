@@ -14,10 +14,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
-import net.minecraftforge.client.gui.ForgeIngameGui;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.silentchaos512.hpbar.HealthBar;
 import net.silentchaos512.hpbar.config.Color;
 import net.silentchaos512.hpbar.config.Config;
@@ -37,22 +33,7 @@ public class GuiHealthBar extends Screen {
         this.mc = mc;
     }
 
-    @SubscribeEvent
-    public void onRenderGameOverlay(RenderGameOverlayEvent.PreLayer event) {
-        ForgeIngameGui gui = (ForgeIngameGui) mc.gui;
-        // Hide vanilla health?
-        if (Config.replaceVanillaHealth.get() && event.isCancelable() && event.getOverlay() == ForgeIngameGui.PLAYER_HEALTH_ELEMENT) {
-            event.setCanceled(true);
-            ((ForgeIngameGui) Minecraft.getInstance().gui).left_height += 10;
-        }
-    }
-
-    @SubscribeEvent
-    public void onRenderGameOverlay(RenderGameOverlayEvent event) {
-        // Only render on TEXT (seems to cause problems in other cases).
-        if (event.isCancelable() || event.getType() != ElementType.TEXT) {
-            return;
-        }
+    public void onRenderGameOverlay(Window res, PoseStack stack, int vanillaYOffset) {
 
         // Don't render in creative mode?
         if (Config.replaceVanillaHealth.get() && mc.player.getAbilities().instabuild) {
@@ -68,10 +49,6 @@ public class GuiHealthBar extends Screen {
         if (healthFraction >= 1f && !Config.barShowAlways.get() && !Config.replaceVanillaHealth.get()) {
             return;
         }
-
-        Window res = event.getWindow();
-        ForgeIngameGui gui = (ForgeIngameGui) mc.gui;
-        PoseStack stack = event.getMatrixStack();
 
         int posX, posY;
         float scale;
@@ -101,7 +78,7 @@ public class GuiHealthBar extends Screen {
 
             if (replaceVanilla) {
                 posX = (int) (res.getGuiScaledWidth() / 2 - 91 + quiverX);
-                posY = (int) (res.getGuiScaledHeight() - gui.left_height + 20 + quiverY);
+                posY = (int) (res.getGuiScaledHeight() - vanillaYOffset + 20 + quiverY);
             } else {
                 posX = (int) (res.getGuiScaledWidth() / scale * xOffset - barWidth / 2 + quiverX);
                 posY = (int) (res.getGuiScaledHeight() / scale * yOffset + quiverY);
@@ -141,7 +118,7 @@ public class GuiHealthBar extends Screen {
                 final float paddingX = (barWidth - stringWidth * scale) / 2f;
                 final float paddingY = (barHeight - fontRender.lineHeight / scale) / 2f;
                 posX = (int) (res.getGuiScaledWidth() / 2 - 91 + paddingX);
-                posY = (int) (res.getGuiScaledHeight() - gui.left_height + 20 - paddingY);
+                posY = (int) (res.getGuiScaledHeight() - vanillaYOffset + 20 - paddingY);
                 stack.translate(posX, posY, 0); // y pos is a bit off for scale != 0.8f
                 stack.scale(scale, scale, 1);
                 fontRender.drawShadow(stack, str, 0, 0, 0xFFFFFF);
@@ -187,11 +164,6 @@ public class GuiHealthBar extends Screen {
 //    GL11.glPopMatrix();
 
         //renderFoodBar(event);
-    }
-
-    protected void renderFoodBar(RenderGameOverlayEvent event) {
-
-
     }
 
     protected void drawBar(PoseStack stack, float x, float y, float width, float height, Color color, float fraction) {

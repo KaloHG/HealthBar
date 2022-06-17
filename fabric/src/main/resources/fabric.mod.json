@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "healthbar",
+  "version": "${version}",
+
+  "name": "Health Bar",
+  "description": "A simple, accurate health bar!",
+  "authors": [
+    "SilentChaos512",
+    "Virizion"
+  ],
+  "contact": {
+    "issues": "https://github.com/Virizion/HealthBar/issues",
+    "sources": "https://github.com/Virizion/HealthBar"
+  },
+  "license": "GPL-3.0",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "net.silentchaos512.hpbar.HealthBarFabric"
+    ],
+    "modmenu": [
+      "net.silentchaos512.hpbar.modmenu.ModMenuIntegration"
+    ]
+  },
+
+  "mixins": [
+    "healthbar.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.7.4",
+    "fabric": "*",
+    "minecraft": "1.18.x"
+  },
+  "recommends": {
+    "modmenu": ">=3.1.0"
+  }
+}

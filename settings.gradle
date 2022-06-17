@@ -6,3 +6,7 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+include 'common'
+include 'forge'
+include 'fabric'
+
