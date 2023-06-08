@@ -7,16 +7,17 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.math.Matrix4f;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextComponent;
 import net.silentchaos512.hpbar.config.Config;
+import org.joml.Matrix4f;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -136,9 +137,9 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         protected void drawTooltip(PoseStack matrixStack, int mouseX, int mouseY) {
             if (this.hoverChecker != null && this.hoverChecker.checkHover(mouseX, mouseY)) {
                 drawHoveringText(matrixStack, Arrays.asList(
-                                new TextComponent(this.name).setStyle(Style.EMPTY.withColor(ChatFormatting.GREEN)),
-                                new TextComponent(this.value.getDescription()).setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW)),
-                                new TextComponent("[default: " + this.value.getDefaultValue() + "]").setStyle(Style.EMPTY.withColor(ChatFormatting.AQUA))),
+                                Component.literal(this.name).setStyle(Style.EMPTY.withColor(ChatFormatting.GREEN)),
+                                Component.literal(this.value.getDescription()).setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW)),
+                                Component.literal("[default: " + this.value.getDefaultValue() + "]").setStyle(Style.EMPTY.withColor(ChatFormatting.AQUA))),
                         mouseX, mouseY);
             }
         }
@@ -198,14 +199,11 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
                 fillGradient(matrix4f, bufferBuilder, k - 3, l - 3, k + i + 3, l - 3 + 1, 400, p, p);
                 fillGradient(matrix4f, bufferBuilder, k - 3, l + n + 2, k + i + 3, l + n + 3, 400, q, q);
                 RenderSystem.enableDepthTest();
-                RenderSystem.disableTexture();
                 RenderSystem.enableBlend();
                 RenderSystem.defaultBlendFunc();
                 RenderSystem.setShader(GameRenderer::getPositionColorShader);
-                bufferBuilder.end();
-                BufferUploader.end(bufferBuilder);
+                BufferUploader.draw(bufferBuilder.end());
                 RenderSystem.disableBlend();
-                RenderSystem.enableTexture();
                 MultiBufferSource.BufferSource immediate = MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
                 matrixStack.translate(0.0D, 0.0D, 400.0D);
 
@@ -215,7 +213,7 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
 
                     if (text2 != null)
                     {
-                        minecraft.font.drawInBatch(text2, k, l, -1, true, matrix4f, immediate, false, 0, 15728880);
+                        minecraft.font.drawInBatch(text2, k, l, -1, true, matrix4f, immediate, Font.DisplayMode.NORMAL, 0, 15728880);
                     }
 
                     if (s == 0)
@@ -241,28 +239,27 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         }
 
         @Override
-        public Component getNarration() {
-            return TextComponent.EMPTY;
+        public Component getNarration()  {
+             return Component.empty();
         }
     }
 
     public class BooleanEntry extends ConfigEntry<Boolean, Config.BooleanValue> {
-        private ColorableButton button;
+        private Button button;
 
         public BooleanEntry(String name, Config.BooleanValue value) {
             super(name, value);
 
-            this.button = new ColorableButton(0, 0, 150, 18, new TextComponent(""), b -> this.value.set(!this.value.get()));
+            this.button = Button.builder(Component.literal(""), b -> this.value.set(!this.value.get())).bounds(0, 0, 150, 18).build();
         }
 
         @Override
         public void render(PoseStack matrixStack, int slotIndex, int y, int x, int listWidth, int slotHeight, int mouseX, int mouseY, boolean isSelected, float partialTicks) {
             drawString(matrixStack, minecraft.font, this.name, 20, y + minecraft.font.lineHeight / 2, 14737632);
 
-            this.button.x = x + listWidth / 2 + 30;
-            this.button.y = y;
-            this.button.setMessage(new TextComponent(this.value.get().toString()));
-            this.button.setFGColor(this.value.get() ? ChatFormatting.DARK_GREEN.getColor() : ChatFormatting.DARK_RED.getColor());
+            this.button.setX(x + listWidth / 2 + 30);
+            this.button.setY(y);
+            this.button.setMessage(Component.literal(this.value.get().toString()));
             this.button.render(matrixStack, mouseX, mouseY, partialTicks);
 
             super.render(matrixStack, slotIndex, y, x, listWidth, slotHeight, mouseX, mouseY, isSelected, partialTicks);
@@ -280,7 +277,7 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         protected IntEntry(String name, Config.RangeIntValue value) {
             super(name, value);
 
-            this.button = new EditBox(minecraft.font, 0, 0, 150, 18, new TextComponent(""));
+            this.button = new EditBox(minecraft.font, 0, 0, 150, 18, Component.literal(""));
             this.button.setValue(value.get().toString());
             this.button.setResponder(text -> {
                 try {
@@ -297,8 +294,8 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         public void render(PoseStack matrixStack, int slotIndex, int y, int x, int listWidth, int slotHeight, int mouseX, int mouseY, boolean isSelected, float partialTicks) {
             drawString(matrixStack, minecraft.font, this.name, 20, y + minecraft.font.lineHeight / 2, 14737632);
 
-            this.button.x = x + listWidth / 2 + 30;
-            this.button.y = y;
+            this.button.setX(x + listWidth / 2 + 30);
+            this.button.setY(y);
 
             try {
                 int val = Integer.parseInt(this.button.getValue());
@@ -329,8 +326,8 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         }
 
         @Override
-        public boolean changeFocus(boolean p_changeFocus_1_) {
-            return this.button.changeFocus(p_changeFocus_1_);
+        public void setFocused(boolean p_changeFocus_1_) {
+            this.button.setFocused(p_changeFocus_1_);
         }
 
         @Override
@@ -352,9 +349,9 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         protected void drawTooltip(PoseStack matrixStack, int mouseX, int mouseY) {
             if (this.hoverChecker != null && this.hoverChecker.checkHover(mouseX, mouseY)) {
                 drawHoveringText(matrixStack, Arrays.asList(
-                                new TextComponent(this.name).setStyle(Style.EMPTY.withColor(ChatFormatting.GREEN)),
-                                new TextComponent(this.value.getDescription()).setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW)),
-                                new TextComponent("[range: " + rangeToString(this.value.getMin(), this.value.getMax()) + ", default: " + this.value.getDefaultValue() + "]").setStyle(Style.EMPTY.withColor(ChatFormatting.AQUA))),
+                                Component.literal(this.name).setStyle(Style.EMPTY.withColor(ChatFormatting.GREEN)),
+                                Component.literal(this.value.getDescription()).setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW)),
+                                Component.literal("[range: " + rangeToString(this.value.getMin(), this.value.getMax()) + ", default: " + this.value.getDefaultValue() + "]").setStyle(Style.EMPTY.withColor(ChatFormatting.AQUA))),
                         mouseX, mouseY);
             }
         }
@@ -377,7 +374,7 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         protected DoubleEntry(String name, Config.RangeDoubleValue value) {
             super(name, value);
 
-            this.button = new EditBox(minecraft.font, 0, 0, 150, 18, new TextComponent(""));
+            this.button = new EditBox(minecraft.font, 0, 0, 150, 18, Component.literal(""));
             this.button.setValue(value.get().toString());
             this.button.setResponder(text -> {
                 try {
@@ -394,8 +391,8 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         public void render(PoseStack matrixStack, int slotIndex, int y, int x, int listWidth, int slotHeight, int mouseX, int mouseY, boolean isSelected, float partialTicks) {
             drawString(matrixStack, minecraft.font, this.name, 20, y + minecraft.font.lineHeight / 2, 14737632);
 
-            this.button.x = x + listWidth / 2 + 30;
-            this.button.y = y;
+            this.button.setX(x + listWidth / 2 + 30);
+            this.button.setY(y);
 
             try {
                 double val = Double.parseDouble(this.button.getValue());
@@ -426,8 +423,8 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         }
 
         @Override
-        public boolean changeFocus(boolean p_changeFocus_1_) {
-            return this.button.changeFocus(p_changeFocus_1_);
+        public void setFocused(boolean p_changeFocus_1_) {
+            this.button.setFocused(p_changeFocus_1_);
         }
 
         @Override
@@ -449,9 +446,9 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         protected void drawTooltip(PoseStack matrixStack, int mouseX, int mouseY) {
             if (this.hoverChecker != null && this.hoverChecker.checkHover(mouseX, mouseY)) {
                 drawHoveringText(matrixStack, Arrays.asList(
-                                new TextComponent(this.name).setStyle(Style.EMPTY.withColor(ChatFormatting.GREEN)),
-                                new TextComponent(this.value.getDescription()).setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW)),
-                                new TextComponent("[range: " + rangeToString(this.value.getMin(), this.value.getMax()) + ", default: " + this.value.getDefaultValue() + "]").setStyle(Style.EMPTY.withColor(ChatFormatting.AQUA))),
+                                Component.literal(this.name).setStyle(Style.EMPTY.withColor(ChatFormatting.GREEN)),
+                                Component.literal(this.value.getDescription()).setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW)),
+                                Component.literal("[range: " + rangeToString(this.value.getMin(), this.value.getMax()) + ", default: " + this.value.getDefaultValue() + "]").setStyle(Style.EMPTY.withColor(ChatFormatting.AQUA))),
                         mouseX, mouseY);
             }
         }
@@ -474,7 +471,7 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         protected StringEntry(String name, Config.StringValue value) {
             super(name, value);
 
-            this.button = new EditBox(minecraft.font, 0, 0, 150, 18, new TextComponent(""));
+            this.button = new EditBox(minecraft.font, 0, 0, 150, 18, Component.literal(""));
             this.button.setValue(value.get());
             this.button.setResponder(text -> {
                 if (value.test(text)) {
@@ -487,8 +484,8 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         public void render(PoseStack matrixStack, int slotIndex, int y, int x, int listWidth, int slotHeight, int mouseX, int mouseY, boolean isSelected, float partialTicks) {
             drawString(matrixStack, minecraft.font, this.name, 20, y + minecraft.font.lineHeight / 2, 14737632);
 
-            this.button.x = x + listWidth / 2 + 30;
-            this.button.y = y;
+            this.button.setX(x + listWidth / 2 + 30);
+            this.button.setY(y);
 
             if (!value.test(this.button.getValue())) {
                 this.button.setTextColor(ChatFormatting.RED.getColor());
@@ -512,8 +509,8 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         }
 
         @Override
-        public boolean changeFocus(boolean p_changeFocus_1_) {
-            return this.button.changeFocus(p_changeFocus_1_);
+        public void setFocused(boolean p_changeFocus_1_) {
+            this.button.setFocused(p_changeFocus_1_);
         }
 
         @Override
@@ -533,14 +530,14 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
     }
 
     public class EnumEntry<E extends Enum<E>> extends ConfigEntry<E, Config.EnumValue<E>> {
-        private ColorableButton button;
+        private Button button;
         private E[] values;
 
         @SuppressWarnings("unchecked")
         public EnumEntry(String name, Config.EnumValue<E> value) {
             super(name, value);
 
-            this.button = new ColorableButton(0, 0, 150, 18, new TextComponent(""), b -> this.value.set(values[(this.value.get().ordinal() + 1) % values.length]));
+            this.button = Button.builder(Component.literal(""), b -> this.value.set(values[(this.value.get().ordinal() + 1) % values.length])).bounds(0, 0, 150, 18).build();
             this.values = value.getClazz().getEnumConstants();
         }
 
@@ -548,9 +545,9 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
         public void render(PoseStack matrixStack, int slotIndex, int y, int x, int listWidth, int slotHeight, int mouseX, int mouseY, boolean isSelected, float partialTicks) {
             drawString(matrixStack, minecraft.font, this.name, 20, y + minecraft.font.lineHeight / 2, 14737632);
 
-            this.button.x = x + listWidth / 2 + 30;
-            this.button.y = y;
-            this.button.setMessage(new TextComponent(this.value.get().toString()));
+            this.button.setX(x + listWidth / 2 + 30);
+            this.button.setY(y);
+            this.button.setMessage(Component.literal(this.value.get().toString()));
             this.button.render(matrixStack, mouseX, mouseY, partialTicks);
 
             super.render(matrixStack, slotIndex, y, x, listWidth, slotHeight, mouseX, mouseY, isSelected, partialTicks);
@@ -563,13 +560,13 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
     }
 
     public class GroupEntry extends Entry {
-        private ColorableButton button;
+        private Button button;
 
         public GroupEntry(String name) {
             super(name);
 
-            this.button = new ColorableButton(0, 0, 300, 18, new TextComponent(name), b -> {
-            });
+            this.button = Button.builder(Component.literal(name), b -> {
+            }).bounds(0, 0, 300, 18).build();
         }
 
         @Override
@@ -578,8 +575,8 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
 
         @Override
         public void render(PoseStack matrixStack, int slotIndex, int y, int x, int listWidth, int slotHeight, int mouseX, int mouseY, boolean isSelected, float partialTicks) {
-            this.button.x = x + listWidth / 2 - 150;
-            this.button.y = y;
+            this.button.setX(x + listWidth / 2 - 150);
+            this.button.setY(y);
             this.button.render(matrixStack, mouseX, mouseY, partialTicks);
         }
 
@@ -594,7 +591,7 @@ public class GuiListHealthBarConfig extends ObjectSelectionList<GuiListHealthBar
 
         @Override
         public Component getNarration() {
-            return TextComponent.EMPTY;
+            return Component.empty();
         }
     }
 }

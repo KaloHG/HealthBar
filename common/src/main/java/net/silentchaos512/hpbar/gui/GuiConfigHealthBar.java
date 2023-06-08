@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import net.silentchaos512.hpbar.config.Config;
 
 import java.util.ArrayList;
@@ -17,7 +17,7 @@ public class GuiConfigHealthBar extends Screen {
     private List<String> currentPath = new ArrayList<>();
 
     public GuiConfigHealthBar(Screen parentScreen) {
-        super(new TextComponent("Health Bar Config"));
+        super(Component.literal("Health Bar Config"));
 
         this.parentScreen = parentScreen;
     }
@@ -27,7 +27,7 @@ public class GuiConfigHealthBar extends Screen {
         this.list = new GuiListHealthBarConfig(this);
         addWidget(this.list);
 
-        this.backButton = new Button(this.width / 2 - 154, this.height - 30, 150, 20, new TextComponent("Back"), button -> onClose());
+        this.backButton = Button.builder(Component.literal("Back"), button -> onClose()).bounds(this.width / 2 - 154, this.height - 30, 150, 20).build();
         addRenderableWidget(this.backButton);
     }
 
@@ -35,7 +35,7 @@ public class GuiConfigHealthBar extends Screen {
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         renderBackground(matrixStack);
         this.list.render(matrixStack, mouseX, mouseY, partialTicks);
-        drawCenteredString(matrixStack, this.font, !this.currentPath.isEmpty() ? new TextComponent(this.currentPath.get(this.currentPath.size() - 1)) : this.title, this.width / 2, 8, 16777215);
+        drawCenteredString(matrixStack, this.font, !this.currentPath.isEmpty() ? Component.literal(this.currentPath.get(this.currentPath.size() - 1)) : this.title, this.width / 2, 8, 16777215);
         super.render(matrixStack, mouseX, mouseY, partialTicks);
         this.list.drawTooltips(matrixStack, mouseX, mouseY);
     }

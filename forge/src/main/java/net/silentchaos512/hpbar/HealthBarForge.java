@@ -2,9 +2,11 @@ package net.silentchaos512.hpbar;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraftforge.client.ConfigGuiHandler;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.client.gui.ForgeIngameGui;
+import net.minecraftforge.client.ConfigScreenHandler;
+import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.client.gui.overlay.ForgeGui;
+import net.minecraftforge.client.gui.overlay.GuiOverlayManager;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -23,7 +25,7 @@ public class HealthBarForge extends HealthBar {
     public HealthBarForge()
     {
         Config.init(FMLPaths.CONFIGDIR.get().resolve("healthbar.json").toFile());
-        ModLoadingContext.get().registerExtensionPoint(ConfigGuiHandler.ConfigGuiFactory.class, () -> new ConfigGuiHandler.ConfigGuiFactory((mc, screen) -> new GuiConfigHealthBar(screen)));
+        ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class, () -> new ConfigScreenHandler.ConfigScreenFactory((mc, screen) -> new GuiConfigHealthBar(screen)));
 
         IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
         bus.addListener(this::preInit);
@@ -41,23 +43,24 @@ public class HealthBarForge extends HealthBar {
     }
 
     @SubscribeEvent
-    public void onRenderGameOverlay(RenderGameOverlayEvent.PreLayer event) {
+    public void onRenderGameOverlay(RenderGuiOverlayEvent.Pre event) {
 
         // Hide vanilla health?
-        if (Config.replaceVanillaHealth.get() && event.isCancelable() && event.getOverlay() == ForgeIngameGui.PLAYER_HEALTH_ELEMENT) {
+        if (Config.replaceVanillaHealth.get() && event.isCancelable() && event.getOverlay() == GuiOverlayManager.findOverlay(VanillaGuiOverlay.PLAYER_HEALTH.id())) {
             event.setCanceled(true);
-            ((ForgeIngameGui) Minecraft.getInstance().gui).left_height += 10;
+            ((ForgeGui) Minecraft.getInstance().gui).leftHeight += 10;
         }
     }
 
     @SubscribeEvent
-    public void onRenderGameOverlay(RenderGameOverlayEvent event) {
+    public void onRenderGameOverlay(RenderGuiOverlayEvent event) {
 
         // Only render on TEXT (seems to cause problems in other cases).
-        if (event.isCancelable() || event.getType() != RenderGameOverlayEvent.ElementType.TEXT) {
+        //TODO i have no idea if this works, i figure this is probably just what it's looking for.
+        if (event.isCancelable() || event.getOverlay() != GuiOverlayManager.findOverlay(VanillaGuiOverlay.DEBUG_TEXT.id())) {
             return;
         }
 
-        guiHealthBar.onRenderGameOverlay(event.getWindow(), event.getMatrixStack(), ((ForgeIngameGui) Minecraft.getInstance().gui).left_height);
+        guiHealthBar.onRenderGameOverlay(event.getWindow(), event.getPoseStack(), ((ForgeGui) Minecraft.getInstance().gui).leftHeight);
     }
 }

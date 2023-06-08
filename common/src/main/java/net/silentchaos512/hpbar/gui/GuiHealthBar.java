@@ -7,16 +7,16 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.math.Matrix4f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.silentchaos512.hpbar.HealthBar;
 import net.silentchaos512.hpbar.config.Color;
 import net.silentchaos512.hpbar.config.Config;
+import org.joml.Matrix4f;
 
 public class GuiHealthBar extends Screen {
 
@@ -29,7 +29,7 @@ public class GuiHealthBar extends Screen {
 
     public GuiHealthBar(Minecraft mc) {
 
-        super(new TextComponent(""));
+        super(Component.literal(""));
         this.mc = mc;
     }
 

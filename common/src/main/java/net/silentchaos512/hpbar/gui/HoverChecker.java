@@ -82,10 +82,10 @@ public class HoverChecker
     {
         if (this.widget != null)
         {
-            this.top = widget.y;
-            this.bottom = widget.y + widget.getHeight();
-            this.left = widget.x;
-            this.right = widget.x + widget.getWidth();
+            this.top = widget.getY();
+            this.bottom = widget.getY() + widget.getHeight();
+            this.left = widget.getX();
+            this.right = widget.getX() + widget.getWidth();
             canHover = canHover && widget.visible;
         }
 
